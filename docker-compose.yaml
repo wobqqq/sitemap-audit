@@ -1,0 +1,22 @@
+services:
+  sitemap-audit:
+    image: sitemap-audit:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: docker/sitemap-audit/Dockerfile
+    user: ${UID:-1000}:${GID:-1000}
+    volumes:
+      - .:/work
+    profiles: [cli]
+
+  go:
+    image: golang:1.27-alpine
+    working_dir: /src
+    user: ${UID:-1000}:${GID:-1000}
+    environment:
+      GOCACHE: /src/.cache/go-build
+      GOMODCACHE: /src/.cache/go-mod
+      GOFLAGS: -buildvcs=false
+    volumes:
+      - .:/src
+    profiles: [dev]
