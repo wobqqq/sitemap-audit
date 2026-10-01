@@ -4,6 +4,8 @@ All notable changes are documented here. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-01
+
 ### Added
 
 - A single static binary for Linux, macOS and Windows (amd64 and arm64).
@@ -15,4 +17,5 @@ All notable changes are documented here. The format follows [Keep a Changelog](h
 - Reports: self-contained HTML, Excel workbook, JSON with a versioned schema, CSV, Markdown and JUnit XML, written per run with a `latest` pointer.
 - `--fail-on` exit codes for CI; Ctrl+C writes the partial reports.
 
-[Unreleased]: https://github.com/wobqqq/sitemap-audit/commits/main
+[Unreleased]: https://github.com/wobqqq/sitemap-audit/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/wobqqq/sitemap-audit/releases/tag/v1.0.0
