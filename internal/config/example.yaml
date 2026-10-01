@@ -1,0 +1,106 @@
+# sitemap-audit configuration. Every key is optional except sites; the values
+# below are the defaults. Durations: 15s, 500ms, 2m (or a number of seconds).
+# Sizes: 5MB, 512KiB (or a number of bytes).
+
+sites:
+  # A site is a URL; a URL with a path is a section audited on its own
+  # (only the sitemap URLs inside that path). Sections configured as their own
+  # sites are left out of the parent site.
+  - https://www.example.com
+  - url: https://www.example.com/blog
+    concurrency: 3
+
+http:
+  timeout: 15s
+  user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+  accept_language: "en-US,en;q=0.9"
+  # Send the headers a browser sends when it opens a page (some WAFs block
+  # requests without them). sec_ch_ua must match the user agent's version.
+  browser_headers: true
+  sec_ch_ua: '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"'
+  sec_ch_ua_platform: '"Linux"'
+  # Sent with every request so the site owner can recognise the audit.
+  audit_header: "X-Audit: sitemap-audit"
+  # Extra headers, sent only to the audited site's own host.
+  headers: {}
+  insecure_skip_verify: false
+  # Hard limit read from any single response.
+  max_body_size: 64MiB
+
+politeness:
+  # Random pause before the home page, robots.txt and sitemap requests.
+  delay: { min: 1s, max: 3s }
+  # Random pause before every crawled URL, per worker.
+  crawl_delay: { min: 300ms, max: 1s }
+  # Retries when there is no response, or a 429/503 with Retry-After.
+  retries: 2
+  retry_delay: { min: 3s, max: 8s }
+  max_retry_after: 60s
+  # Use robots.txt Crawl-delay: one request at a time, at least that far apart.
+  respect_crawl_delay: false
+
+crawl:
+  # false is the same as --no-crawl: robots.txt and sitemaps only.
+  enabled: true
+  concurrency: 5
+  # 0 means no limit.
+  max_urls: 0
+  # Hops followed to check redirect chains (the recorded status is always
+  # the first answer, redirects are not followed for it).
+  max_redirects: 10
+  # Visit the home page twice: the first visit only collects cookies.
+  warm_up: true
+
+sitemap:
+  max_depth: 5
+  # Tried at the site URL and at the host root when robots.txt lists no sitemap.
+  fallbacks: [sitemap.xml, sitemap_index.xml]
+  # Hosts a sitemap may list besides its own (cross-submission).
+  allowed_hosts: []
+
+robots:
+  # The robots.txt group used for ROBOTS_BLOCKED (falls back to *).
+  user_agent: Googlebot
+
+checks:
+  # Every group is on by default; see docs/issues.md for the codes.
+  site: true
+  robots: true
+  protocol: true
+  extensions: true
+  hreflang: true
+  status: true
+  redirects: true
+  soft_404: true
+  noindex: true
+  robots_blocked: true
+  canonical: true
+  url_variants: true
+  duplicates: true
+  lastmod_mismatch: true
+  performance: true
+  content_type: true
+  # Single codes to leave out.
+  disable: []
+  # Severity overrides: notice, warning or error.
+  severity: {}
+
+thresholds:
+  # Case-insensitive regular expression matched against the title and h1.
+  soft_404_pattern: '(^|[^0-9])404([^0-9]|$)|not found|page not found|error 404|nicht gefunden|introuvable|no encontrad|non trovat|não encontrad|niet gevonden|nie znaleziono|nu a fost g[aă]sit|не найден'
+  # A 200 HTML page with less visible text than this is a soft 404.
+  soft_404_min_text: 100
+  slow_response: 3s
+  max_page_size: 5MiB
+  lastmod_tolerance: 24h
+  news_max_age: 48h
+
+report:
+  # Every run writes into <out>/<timestamp>/; <out>/latest names the last run.
+  out: reports
+  formats: [html, json, xlsx, csv, md]
+  # Start CSV files with a UTF-8 BOM so Excel opens them correctly.
+  csv_bom: false
+  # Exit with code 1 when an issue of this severity or worse is found:
+  # none, notice, warning or error.
+  fail_on: none
