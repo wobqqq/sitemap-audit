@@ -54,9 +54,11 @@ go build -o dist/ ./cmd/sitemap-audit      # or: make build
 **Docker**:
 
 ```bash
-docker build -t sitemap-audit .
-docker run --rm -v "$PWD:/work" sitemap-audit run https://www.example.com
+docker compose build sitemap-audit
+docker compose run --rm sitemap-audit run https://www.example.com
 ```
+
+The image is built from `docker/sitemap-audit/Dockerfile`; the reports land in `reports/` of the current folder. Without a local Go toolchain, the `go` service runs the same commands as the Makefile: `docker compose run --rm go go test ./...`.
 
 ## Quick start
 
