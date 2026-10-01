@@ -1,0 +1,9 @@
+/dist/
+/reports/
+coverage.out
+*.test
+*.prof
+config.local.*
+sitemap-audit.local.yaml
+.env
+/internal/*/testdata/fuzz/

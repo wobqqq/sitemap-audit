@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}}</title>
+<style>
+:root{--bg:#f6f7f9;--panel:#fff;--text:#1d2330;--muted:#5d6675;--line:#dde1e7;--accent:#1f5fae;--err:#c62828;--warn:#b26a00;--note:#2e6f9e;--ok:#2e7d32;--chip:#eef1f5;--row:#fafbfc}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11151c;--panel:#1a2029;--text:#e3e7ee;--muted:#9aa4b2;--line:#2c3440;--accent:#6aa6ef;--err:#ef6b6b;--warn:#f0a946;--note:#6cb4e6;--ok:#6cc070;--chip:#242c37;--row:#1e252f}}
+:root[data-theme="dark"]{--bg:#11151c;--panel:#1a2029;--text:#e3e7ee;--muted:#9aa4b2;--line:#2c3440;--accent:#6aa6ef;--err:#ef6b6b;--warn:#f0a946;--note:#6cb4e6;--ok:#6cc070;--chip:#242c37;--row:#1e252f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+a{color:var(--accent)}
+h1{font-size:20px;margin:0}
+h2{font-size:16px;margin:0 0 10px}
+.meta{color:var(--muted);font-size:13px}
+main{padding:16px 20px;max-width:1600px;margin:0 auto}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.card b{display:block;font-size:24px}
+.card span{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:16px;overflow:auto}
+nav.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+nav.tabs button,.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer;font:inherit}
+nav.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;align-items:center}
+input,select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit}
+input[type=search]{min-width:260px;flex:1}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{position:sticky;top:0;background:var(--panel);cursor:pointer;white-space:nowrap;user-select:none}
+th[data-dir="asc"]::after{content:" ▲"}th[data-dir="desc"]::after{content:" ▼"}
+tbody tr:nth-child(even){background:var(--row)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.url{word-break:break-all;max-width:520px}
+.sev{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:600;color:#fff}
+.sev.error{background:var(--err)}.sev.warning{background:var(--warn)}.sev.notice{background:var(--note)}
+.st2{color:var(--ok)}.st3{color:var(--warn)}.st4,.st5,.st0{color:var(--err);font-weight:600}
+.chip{display:inline-block;background:var(--chip);border-radius:4px;padding:0 5px;margin:1px;font-size:11px;font-family:ui-monospace,Menlo,Consolas,monospace;cursor:pointer}
+.pager{display:flex;gap:8px;align-items:center;margin-top:10px}
+.muted{color:var(--muted)}
+.hidden{display:none}
+details summary{cursor:pointer}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:8px 0}
+dt{color:var(--muted)}dd{margin:0;word-break:break-all}
+.bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--chip);min-width:120px}
+.bar i{display:block}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Sitemap audit</h1><div class="meta" id="meta"></div></div>
+  <button class="btn" id="theme" type="button">Dark theme</button>
+</header>
+<main>
+  <section class="cards" id="cards"></section>
+  <section class="panel"><h2>Sites</h2><table id="sites"></table></section>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-tab="issues" aria-selected="true">Issues</button>
+    <button role="tab" data-tab="urls" aria-selected="false">URLs</button>
+    <button role="tab" data-tab="sitemaps" aria-selected="false">Sitemaps</button>
+    <button role="tab" data-tab="details" aria-selected="false">Site details</button>
+  </nav>
+  <section class="panel" data-pane="issues"><table id="issues"></table></section>
+  <section class="panel hidden" data-pane="urls">
+    <div class="filters">
+      <input type="search" id="q" placeholder="Search URL, title, issue…">
+      <select id="fsite"><option value="">All sites</option></select>
+      <select id="fsev"><option value="">Any severity</option><option value="error">Errors</option><option value="warning">Warnings and worse</option><option value="notice">Any issue</option><option value="clean">No issues</option></select>
+      <select id="fstatus"><option value="">Any status</option><option>2xx</option><option>3xx</option><option>4xx</option><option>5xx</option><option>no response</option><option>not crawled</option></select>
+      <select id="fcode"><option value="">Any issue code</option></select>
+      <button class="btn" id="reset" type="button">Reset</button>
+      <span class="muted" id="count"></span>
+    </div>
+    <table id="urls"></table>
+    <div class="pager"><button class="btn" id="prev" type="button">‹ Prev</button><span id="page"></span><button class="btn" id="next" type="button">Next ›</button></div>
+  </section>
+  <section class="panel hidden" data-pane="sitemaps"><table id="sitemaps"></table></section>
+  <section class="panel hidden" data-pane="details" id="details"></section>
+</main>
+<script type="application/json" id="data">{{.Data}}</script>
+<script type="application/json" id="catalogue">{{.Catalogue}}</script>
+<script>
+(function(){
+"use strict";
+var run=JSON.parse(document.getElementById("data").textContent);
+var cat=JSON.parse(document.getElementById("catalogue").textContent);
+var defs={};cat.forEach(function(d){defs[d.code]=d;});
+var rank={error:3,warning:2,notice:1};
+var PAGE=100;
+function el(tag,attrs,kids){var e=document.createElement(tag);if(attrs)Object.keys(attrs).forEach(function(k){if(k==="text")e.textContent=attrs[k];else if(k==="cls")e.className=attrs[k];else e.setAttribute(k,attrs[k]);});(kids||[]).forEach(function(c){if(c!=null)e.appendChild(typeof c==="string"?document.createTextNode(c):c);});return e;}
+function sev(s){return s?el("span",{cls:"sev "+s,text:s}):"";}
+function cls(u){if(!u.crawled)return "not crawled";var s=u.status;if(!s)return "no response";if(s<300)return "2xx";if(s<400)return "3xx";if(s<500)return "4xx";return "5xx";}
+function stat(u){if(!u.crawled)return el("span",{cls:"muted",text:"-"});var s=u.status||0;return el("span",{cls:"st"+String(s).charAt(0),text:s?String(s):"000"});}
+function dur(s){s=Math.round(s||0);return s<60?s+"s":Math.floor(s/60)+"m "+String(s%60).padStart(2,"0")+"s";}
+function codesOf(list){var seen={},out=[];(list||[]).forEach(function(i){if(!seen[i.code]){seen[i.code]=1;out.push(i.code);}});return out;}
+var theme=document.getElementById("theme");
+function isDark(){var a=document.documentElement.getAttribute("data-theme");return a==="dark"||(!a&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches);}
+function setTheme(t){if(t)document.documentElement.setAttribute("data-theme",t);else document.documentElement.removeAttribute("data-theme");theme.textContent=isDark()?"Light theme":"Dark theme";}
+var saved=null;try{saved=localStorage.getItem("sitemap-audit-theme");}catch(e){}setTheme(saved);
+theme.addEventListener("click",function(){var t=isDark()?"light":"dark";setTheme(t);try{localStorage.setItem("sitemap-audit-theme",t);}catch(e){}});
+document.getElementById("meta").textContent=run.tool+" "+run.version+" · started "+new Date(run.started_at).toLocaleString()+" · finished "+new Date(run.finished_at).toLocaleString()+(run.interrupted?" · interrupted":"")+(run.crawl?"":" · no crawl");
+var urls=[],sitemaps=[],tot={error:0,warning:0,notice:0},codeCount={},codeSev={};
+run.sites.forEach(function(s){
+  (s.urls||[]).forEach(function(u){u._site=s.id;u._cls=cls(u);u._codes=codesOf(u.issues);u._rank=rank[u.max_severity]||0;u._hay=(u.url+" "+(u.title||"")+" "+u._codes.join(" ")+" "+(u.issues||[]).map(function(i){return i.message;}).join(" ")).toLowerCase();urls.push(u);});
+  (s.sitemaps||[]).forEach(function(m){m._site=s.id;sitemaps.push(m);});
+  var all=[].concat(s.issues||[]);(s.sitemaps||[]).forEach(function(m){all=all.concat(m.issues||[]);});(s.urls||[]).forEach(function(u){all=all.concat(u.issues||[]);});
+  all.forEach(function(i){tot[i.severity]=(tot[i.severity]||0)+1;codeCount[i.code]=(codeCount[i.code]||0)+1;if((rank[i.severity]||0)>(rank[codeSev[i.code]]||0))codeSev[i.code]=i.severity;});
+});
+var cards=document.getElementById("cards");
+[["Sites",run.sites.length],["URLs",urls.length],["Sitemap files",run.sites.reduce(function(a,s){return a+(s.stats.sitemap_files||0);},0)],["Errors",tot.error||0,"error"],["Warnings",tot.warning||0,"warning"],["Notices",tot.notice||0,"notice"]].forEach(function(c){var b=el("b",{text:String(c[1])});if(c[2])b.style.color="var(--"+(c[2]==="error"?"err":c[2]==="warning"?"warn":"note")+")";cards.appendChild(el("div",{cls:"card"},[b,el("span",{text:c[0]})]));});
+function table(t,cols,rows,onRow){
+  var state={key:null,dir:1};
+  function draw(){
+    t.textContent="";
+    var tr=el("tr");cols.forEach(function(c){var th=el("th",{cls:c.num?"num":"",text:c.label});if(state.key===c.key)th.setAttribute("data-dir",state.dir>0?"asc":"desc");th.addEventListener("click",function(){if(state.key===c.key)state.dir=-state.dir;else{state.key=c.key;state.dir=c.num?-1:1;}draw();});tr.appendChild(th);});
+    t.appendChild(el("thead",null,[tr]));
+    var list=rows();
+    if(state.key){var c=cols.filter(function(x){return x.key===state.key;})[0];var v=c.sort||function(r){return r[c.key];};list=list.slice().sort(function(a,b){var x=v(a),y=v(b);if(x==null)x="";if(y==null)y="";return (x>y?1:x<y?-1:0)*state.dir;});}
+    var body=el("tbody");
+    var shown=onRow?onRow.slice(list):list;
+    shown.forEach(function(r){var tr=el("tr");cols.forEach(function(c){var v=c.cell?c.cell(r):r[c.key];var td=el("td",{cls:(c.num?"num ":"")+(c.wrap?"url":"")});if(v instanceof Node)td.appendChild(v);else td.textContent=v==null?"":String(v);tr.appendChild(td);});body.appendChild(tr);});
+    t.appendChild(body);
+    if(onRow&&onRow.after)onRow.after(list.length);
+  }
+  draw();return draw;
+}
+function bar(c){var total=0,parts=[["2xx","var(--ok)"],["3xx","var(--warn)"],["4xx","var(--err)"],["5xx","var(--err)"],["no response","var(--err)"]];parts.forEach(function(p){total+=c[p[0]]||0;});var b=el("div",{cls:"bar",title:parts.map(function(p){return p[0]+": "+(c[p[0]]||0);}).join(", ")});if(total)parts.forEach(function(p){var n=c[p[0]]||0;if(n){var i=el("i");i.style.width=(n/total*100)+"%";i.style.background=p[1];b.appendChild(i);}});return b;}
+table(document.getElementById("sites"),[
+  {key:"id",label:"Site",cell:function(s){var a=el("a",{href:"#",text:s.id});a.addEventListener("click",function(e){e.preventDefault();filterSite(s.id);});return a;}},
+  {key:"home",label:"Home",cell:function(s){return s.home.status?String(s.home.status):"000";},sort:function(s){return s.home.status;}},
+  {key:"robots",label:"robots.txt",cell:function(s){return s.robots.found?"yes":"no ("+(s.robots.status||"000")+")";}},
+  {key:"source",label:"Sitemap",cell:function(s){return s.sitemap?s.sitemap_source:"none";}},
+  {key:"files",label:"Files",num:1,cell:function(s){return s.stats.sitemap_files;},sort:function(s){return s.stats.sitemap_files;}},
+  {key:"urls",label:"URLs",num:1,cell:function(s){return s.stats.urls;},sort:function(s){return s.stats.urls;}},
+  {key:"status",label:"Statuses",cell:function(s){return bar(s.stats.status_classes||{});}},
+  {key:"err",label:"Errors",num:1,cell:function(s){return s.stats.severity.error||0;},sort:function(s){return s.stats.severity.error||0;}},
+  {key:"warn",label:"Warnings",num:1,cell:function(s){return s.stats.severity.warning||0;},sort:function(s){return s.stats.severity.warning||0;}},
+  {key:"note",label:"Notices",num:1,cell:function(s){return s.stats.severity.notice||0;},sort:function(s){return s.stats.severity.notice||0;}},
+  {key:"time",label:"Time",num:1,cell:function(s){return dur(s.duration_s);},sort:function(s){return s.duration_s;}}
+],function(){return run.sites;});
+var codes=Object.keys(codeCount).sort(function(a,b){return (rank[codeSev[b]]-rank[codeSev[a]])||(codeCount[b]-codeCount[a])||(a<b?-1:1);});
+table(document.getElementById("issues"),[
+  {key:"sev",label:"Severity",cell:function(c){return sev(codeSev[c]);},sort:function(c){return rank[codeSev[c]];}},
+  {key:"code",label:"Code",cell:function(c){var a=el("a",{href:"#",text:c});a.addEventListener("click",function(e){e.preventDefault();filterCode(c);});return a;},sort:function(c){return c;}},
+  {key:"title",label:"Issue",cell:function(c){return defs[c]?defs[c].title:c;},sort:function(c){return defs[c]?defs[c].title:c;}},
+  {key:"count",label:"Count",num:1,cell:function(c){return codeCount[c];},sort:function(c){return codeCount[c];}},
+  {key:"desc",label:"What it means",cell:function(c){return defs[c]?defs[c].description:"";}}
+],function(){return codes;});
+if(!codes.length)document.getElementById("issues").replaceWith(el("p",{cls:"muted",text:"No issues found."}));
+var fsite=document.getElementById("fsite"),fcode=document.getElementById("fcode"),fsev=document.getElementById("fsev"),fstatus=document.getElementById("fstatus"),q=document.getElementById("q");
+run.sites.forEach(function(s){fsite.appendChild(el("option",{value:s.id,text:s.id}));});
+codes.forEach(function(c){fcode.appendChild(el("option",{value:c,text:c+" ("+codeCount[c]+")"}));});
+var pageNo=0;
+function filtered(){var t=q.value.trim().toLowerCase(),si=fsite.value,sv=fsev.value,st=fstatus.value,cd=fcode.value;return urls.filter(function(u){if(si&&u._site!==si)return false;if(st&&u._cls!==st)return false;if(cd&&u._codes.indexOf(cd)<0)return false;if(sv==="clean"){if(u._rank)return false;}else if(sv&&u._rank<rank[sv])return false;if(t&&u._hay.indexOf(t)<0)return false;return true;});}
+var pager={slice:function(list){var pages=Math.max(1,Math.ceil(list.length/PAGE));if(pageNo>=pages)pageNo=pages-1;return list.slice(pageNo*PAGE,pageNo*PAGE+PAGE);},after:function(n){var pages=Math.max(1,Math.ceil(n/PAGE));document.getElementById("page").textContent="Page "+(pageNo+1)+" of "+pages;document.getElementById("count").textContent=n+" of "+urls.length+" URLs";document.getElementById("prev").disabled=pageNo===0;document.getElementById("next").disabled=pageNo>=pages-1;}};
+var drawUrls=table(document.getElementById("urls"),[
+  {key:"_site",label:"Site"},
+  {key:"url",label:"URL",wrap:1,cell:function(u){var d=el("details",null,[el("summary",{text:u.url})]);var dl=el("dl");[["Status text",u.status_text],["Redirect to",u.redirect_to],["Chain",(u.redirect_chain||[]).map(function(h){return h.status+" "+h.url;}).join(" → ")],["Content-Type",u.content_type],["Error",u.error],["Found in",(u.found_in||[]).join(" | ")],["lastmod",u.lastmod],["Last-Modified",u.last_modified],["Canonical",u.canonical],["Meta robots",u.meta_robots],["X-Robots-Tag",u.x_robots_tag],["H1",u.h1],["Text length",u.text_length],["Size",u.size_bytes?u.size_bytes+" bytes":""]].forEach(function(p){if(p[1]){dl.appendChild(el("dt",{text:p[0]}));dl.appendChild(el("dd",{text:String(p[1])}));}});(u.issues||[]).forEach(function(i){dl.appendChild(el("dt",null,[sev(i.severity)]));dl.appendChild(el("dd",{text:i.code+": "+i.message}));});d.appendChild(dl);return d;}},
+  {key:"status",label:"Status",num:1,cell:stat,sort:function(u){return u.crawled?u.status:-1;}},
+  {key:"title",label:"Title",wrap:1},
+  {key:"time_s",label:"Time s",num:1},
+  {key:"_rank",label:"Severity",cell:function(u){return sev(u.max_severity);}},
+  {key:"_codes",label:"Issues",cell:function(u){var w=el("span");u._codes.forEach(function(c){var ch=el("span",{cls:"chip",text:c,title:defs[c]?defs[c].title:c});ch.addEventListener("click",function(){filterCode(c);});w.appendChild(ch);});return w;},sort:function(u){return u._codes.length;}}
+],filtered,pager);
+[q,fsite,fsev,fstatus,fcode].forEach(function(x){x.addEventListener(x===q?"input":"change",function(){pageNo=0;drawUrls();});});
+document.getElementById("prev").addEventListener("click",function(){if(pageNo>0){pageNo--;drawUrls();}});
+document.getElementById("next").addEventListener("click",function(){pageNo++;drawUrls();});
+document.getElementById("reset").addEventListener("click",function(){q.value="";fsite.value="";fsev.value="";fstatus.value="";fcode.value="";pageNo=0;drawUrls();});
+table(document.getElementById("sitemaps"),[
+  {key:"_site",label:"Site"},
+  {key:"url",label:"Sitemap",wrap:1,cell:function(m){var s=el("span",{text:m.url});s.style.paddingLeft=(m.depth*16)+"px";return s;}},
+  {key:"kind",label:"Kind"},
+  {key:"status",label:"HTTP",num:1,cell:function(m){return m.status||"-";}},
+  {key:"entries",label:"Entries",num:1},
+  {key:"unique_urls",label:"Unique",num:1},
+  {key:"duplicates_inside",label:"Dups",num:1},
+  {key:"gzip",label:"Gzip",cell:function(m){return m.gzip?"yes":"";}},
+  {key:"issues",label:"Issues",wrap:1,cell:function(m){var w=el("div");(m.issues||[]).forEach(function(i){w.appendChild(el("div",null,[sev(i.severity)," "+i.code+": "+i.message]));});return w;},sort:function(m){return (m.issues||[]).length;}}
+],function(){return sitemaps;});
+var det=document.getElementById("details");
+run.sites.forEach(function(s){var box=el("details",{open:""},[el("summary",null,[el("b",{text:s.id})])]);var dl=el("dl");[["URL",s.url],["Home",(s.home.status||"000")+(s.home.location?" → "+s.home.location:"")+(s.home.error?" ("+s.home.error+")":"")],["Warm-up visit",s.warm_up?((s.warm_up.status||"000")+(s.warm_up.location?" → "+s.warm_up.location:"")):""],["Reference URL",s.reference_url],["robots.txt",(s.robots.status||"000")+" "+s.robots.url],["robots.txt group",s.robots.group],["Crawl-delay",s.robots.crawl_delay_s?s.robots.crawl_delay_s+"s":""],["Sitemaps in robots.txt",(s.robots.sitemaps||[]).join(" | ")],["Sitemap",s.sitemap?s.sitemap+" ("+s.sitemap_source+")":"none"],["Excluded",(s.excluded||[]).map(function(x){return x.urls+" → "+x.site_id;}).join(", ")],["Duration",dur(s.duration_s)],["Interrupted",s.interrupted?"yes":""]].forEach(function(p){if(p[1]){dl.appendChild(el("dt",{text:p[0]}));dl.appendChild(el("dd",{text:String(p[1])}));}});(s.issues||[]).forEach(function(i){dl.appendChild(el("dt",null,[sev(i.severity)]));dl.appendChild(el("dd",{text:i.code+": "+i.message}));});box.appendChild(dl);det.appendChild(el("div",{cls:"panel"},[box]));});
+function tab(name){try{history.replaceState(null,"","#tab-"+name);}catch(e){}document.querySelectorAll("nav.tabs button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===name?"true":"false");});document.querySelectorAll("[data-pane]").forEach(function(p){p.classList.toggle("hidden",p.getAttribute("data-pane")!==name);});}
+document.querySelectorAll("nav.tabs button").forEach(function(b){b.addEventListener("click",function(){tab(b.getAttribute("data-tab"));});});
+function filterCode(c){var sc=defs[c]?defs[c].scope:"url";if(sc==="sitemap"){tab("sitemaps");return;}if(sc==="site"){tab("details");return;}fcode.value=c;pageNo=0;drawUrls();tab("urls");}
+function filterSite(id){fsite.value=id;pageNo=0;drawUrls();tab("urls");}
+var start=location.hash.replace(/^#tab-/,"");if(["issues","urls","sitemaps","details"].indexOf(start)>=0)tab(start);
+})();
+</script>
+</body>
+</html>
